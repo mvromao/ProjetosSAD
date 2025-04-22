@@ -115,10 +115,10 @@ section                    address   length (PC units)   length (bytes) (dec)
 -------                    -------   -----------------   --------------------
 .text                        0x100               0xe94          0x15de  (5598)
 .const                       0xf94                0x1e            0x2d  (45)
-.text                        0xfb2                0xd6           0x141  (321)
-.dinit                      0x1088                0x22            0x33  (51)
+.text                        0xfb2                0xee           0x165  (357)
+.dinit                      0x10a0                0x22            0x33  (51)
 
-                 Total "program" memory used (bytes):         0x177f  (6015) <1%
+                 Total "program" memory used (bytes):         0x17a3  (6051) <1%
 
 
 "data" Memory  [Origin = 0x800, Length = 0x8000]
@@ -196,9 +196,11 @@ External Symbols in Program Memory (by address):
                   0x000fb2                  _setupUART1
                   0x000ff4                  _setupTimer1
                   0x000ffa                  _setupADC
-                  0x001012                  _writeChar
-                  0x00102a                  _writeString
-                  0x001044                  _main
+                  0x00100e                  _writeChar
+                  0x001026                  _writeString
+                  0x001040                  _getPotentiometerValue
+                  0x00106a                  _transmitPotentiometerData
+                  0x001088                  _main
 
 External Symbols in Program Memory (by name):
 
@@ -237,7 +239,8 @@ External Symbols in Program Memory (by name):
                   0x00013c                  __psv_init
                   0x000100                  __resetPRI
                   0x000b0a                  _atoi
-                  0x001044                  _main
+                  0x001040                  _getPotentiometerValue
+                  0x001088                  _main
                   0x000b56                  _memcpy
                   0x000b64                  _memset
                   0x000ffa                  _setupADC
@@ -246,8 +249,9 @@ External Symbols in Program Memory (by name):
                   0x000c2c                  _strlen
                   0x000c5c                  _tolower
                   0x000c6a                  _toupper
-                  0x001012                  _writeChar
-                  0x00102a                  _writeString
+                  0x00106a                  _transmitPotentiometerData
+                  0x00100e                  _writeChar
+                  0x001026                  _writeString
 
 Memory Configuration
 
@@ -474,31 +478,31 @@ __FDEVOPT1
 .comment
  *(.comment)
 
-.debug_info       0x000000       0x105c
+.debug_info       0x000000       0x10d5
  *(.debug_info)
- .debug_info      0x000000        0xeb3 build/default/production/main.o
- .debug_info      0x000eb3         0x90 c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(extendsfdf.DA_o)
- .debug_info      0x000f43         0x8d c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(funpack.DA_o)
- .debug_info      0x000fd0         0x8c c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(mulsi3.DA_o)
+ .debug_info      0x000000        0xf2c build/default/production/main.o
+ .debug_info      0x000f2c         0x90 c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(extendsfdf.DA_o)
+ .debug_info      0x000fbc         0x8d c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(funpack.DA_o)
+ .debug_info      0x001049         0x8c c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(mulsi3.DA_o)
  *(.gnu.linkonce.wi.*)
 
-.debug_abbrev     0x000000        0x1bb
+.debug_abbrev     0x000000        0x1d2
  *(.debug_abbrev)
- .debug_abbrev    0x000000        0x17f build/default/production/main.o
- .debug_abbrev    0x00017f         0x14 c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(extendsfdf.DA_o)
- .debug_abbrev    0x000193         0x14 c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(funpack.DA_o)
- .debug_abbrev    0x0001a7         0x14 c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(mulsi3.DA_o)
+ .debug_abbrev    0x000000        0x196 build/default/production/main.o
+ .debug_abbrev    0x000196         0x14 c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(extendsfdf.DA_o)
+ .debug_abbrev    0x0001aa         0x14 c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(funpack.DA_o)
+ .debug_abbrev    0x0001be         0x14 c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(mulsi3.DA_o)
 
-.debug_line       0x000000        0x224
+.debug_line       0x000000        0x22a
  *(.debug_line)
- .debug_line      0x000000        0x147 build/default/production/main.o
- .debug_line      0x000147         0x59 c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(extendsfdf.DA_o)
- .debug_line      0x0001a0         0x4a c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(funpack.DA_o)
- .debug_line      0x0001ea         0x3a c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(mulsi3.DA_o)
+ .debug_line      0x000000        0x14d build/default/production/main.o
+ .debug_line      0x00014d         0x59 c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(extendsfdf.DA_o)
+ .debug_line      0x0001a6         0x4a c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(funpack.DA_o)
+ .debug_line      0x0001f0         0x3a c:/program files/microchip/xc16/v2.10/bin/bin/../../lib\libc99-pic30-elf.a(mulsi3.DA_o)
 
-.debug_frame      0x000000         0xe2
+.debug_frame      0x000000        0x116
  *(.debug_frame)
- .debug_frame     0x000000         0xe2 build/default/production/main.o
+ .debug_frame     0x000000        0x116 build/default/production/main.o
 
 .debug_str        0x000000         0x5c
  *(.debug_str)
@@ -511,10 +515,10 @@ __FDEVOPT1
  *(.debug_macinfo)
 
 .debug_pubnames
-                  0x000000         0x76
+                  0x000000         0xae
  *(.debug_pubnames)
  .debug_pubnames
-                  0x000000         0x76 build/default/production/main.o
+                  0x000000         0xae build/default/production/main.o
 
 .debug_ranges
  *(.debug_ranges)
@@ -2737,14 +2741,16 @@ __c30_signature
 .const              0x8f94         0x1e load address 0x000f94  
  .const             0x8f94         0x1e build/default/production/main.o
 
-.text             0x000fb2         0xd6
- .text            0x000fb2         0xd6 build/default/production/main.o
+.text             0x000fb2         0xee
+ .text            0x000fb2         0xee build/default/production/main.o
                   0x000fb2                  _setupUART1
                   0x000ff4                  _setupTimer1
                   0x000ffa                  _setupADC
-                  0x001012                  _writeChar
-                  0x00102a                  _writeString
-                  0x001044                  _main
+                  0x00100e                  _writeChar
+                  0x001026                  _writeString
+                  0x001040                  _getPotentiometerValue
+                  0x00106a                  _transmitPotentiometerData
+                  0x001088                  _main
 
-.dinit            0x001088         0x22
- .dinit           0x001088         0x22 data_init
+.dinit            0x0010a0         0x22
+ .dinit           0x0010a0         0x22 data_init

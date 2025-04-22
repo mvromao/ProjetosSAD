@@ -62,7 +62,6 @@ void setupADC() {
     AD1CON1 = 0x0000;    // Manuel converter after sampling, manual sampling
     AD1CON2 = 0;
     AD1CON3 = 0x1F02;    // Sample time = 31 TAD, ADC clock = Fosc/2
-    AD1CHS = 5;          // AN5 as input
     
     AD1CON1bits.ADON = 1;
     //AD1CON1bits.SAMP = 0;
@@ -86,6 +85,26 @@ void writeString(char * str){
         *str++;
     }
 }
+int getPotentiometerValue() {
+    AD1CHS = 5;          // AN5 as input
+    
+    AD1CON1bits.SAMP = 1;   // Começar o sampling
+        
+    for (int i = 0; i < 100; i++);  
+    AD1CON1bits.SAMP = 0;
+        
+    while(!AD1CON1bits.DONE);
+       
+    return ADC1BUF0;
+}
+
+void transmitPotentiometerData(int value, char * str) {
+    value = getPotentiometerValue();
+    sprintf(str, "Valor do potentiometro = %d\r\n", value);
+        
+    //sprintf(str, "Hello World!\n");
+    writeString(str);
+}
 
 int main(int argc, char** argv) {
     setupUART1();
@@ -99,19 +118,7 @@ int main(int argc, char** argv) {
     char str [50];
     
     while(1) {
-        AD1CON1bits.SAMP = 1;   // Começar o sampling
-        
-        for (int i = 0; i < 100; i++);  
-        //__delay(100);
-        AD1CON1bits.SAMP = 0;
-        
-        while(!AD1CON1bits.DONE);
-        
-        value = ADC1BUF0;
-        sprintf(str, "Valor do potentiometro = %d\r\n", value);
-        
-        //sprintf(str, "Hello World!\n");
-        writeString(str);
+        transmitPotentiometerData(value, &str);
     }
     return (1);
 }
