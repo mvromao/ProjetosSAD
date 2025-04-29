@@ -323,8 +323,8 @@ void processMessages(char * str, int freqSample, int nSample, int warningValue){
 void processInput(char * str, int freqSample, int nSample, int warningValue){
 	char buffer[50];
 	
-	if (str[0] == '{' && str[1] == '"') { // Só processar input que comece com {"
-		switch (str[2]) { // O terceiro caracter do input recebido é o que interessa para decidir o que se quer fazer.
+	if (str[0] == '{' && str[1] == '"') { // SÃ³ processar input que comece com {"
+		switch (str[2]) { // O terceiro caracter do input recebido Ã© o que interessa para decidir o que se quer fazer.
 			case 'b':
                 // ALTERAR CANAL DIGITAL BIDIRECIONAL (RA7: 0 output, 1 input)
                 changeBidirectionalChannel(str[5]);
@@ -337,27 +337,27 @@ void processInput(char * str, int freqSample, int nSample, int warningValue){
 				break;
 
 			case 'A':
-				// DEFINIR ENTRADAS ANALÓGICAS E DIGITAIS (pode ser mais do que uma a cada vez!)
+				// DEFINIR ENTRADAS ANALÃGICAS E DIGITAIS (pode ser mais do que uma a cada vez!)
                 defineSampleInputs(str);
 				break;
 				
 			case 'D':
-				if (str[3] >= 'a' && str[3] <= 'z') { // Se o quarto caracter for uma minúsucula, queremos alterar uma determinada saída digital.
+				if (str[3] >= 'a' && str[3] <= 'z') { // Se o quarto caracter for uma minÃºsucula, queremos alterar uma determinada saÃ­da digital.
 					
 				}
 				else {
-					// DEFINIR ENTRADAS ANALÓGICAS E DIGITAIS (pode ser mais do que uma a cada vez!)
+					// DEFINIR ENTRADAS ANALÃGICAS E DIGITAIS (pode ser mais do que uma a cada vez!)
                     defineSampleInputs(str);
 				}
 				break;	
 			
 			case 'p':
-				// CONFIGURAR PERÍODO DE AMOSTRAGEM
+				// CONFIGURAR PERÃODO DE AMOSTRAGEM
                 changeValue(freqSample, str[5]);
 				break;
 				
 			case 'n':
-				// CONFIGURAR NÚMERO DE AMOSTRAS POR MENSAGEM
+				// CONFIGURAR NÃMERO DE AMOSTRAS POR MENSAGEM
                 changeValue(nSample, str[5]);
 				break;	
 			
@@ -366,13 +366,13 @@ void processInput(char * str, int freqSample, int nSample, int warningValue){
 				break;	
 						
 			default:
-				sprintf(buffer, "Opção incorreta, tente outra vez."); // 
+				sprintf(buffer, "OpÃ§Ã£o incorreta, tente outra vez."); // 
 				writeString(str);
 				break;
 		}
 	}
 	else {
-		sprintf(buffer, "Opção incorreta, tente outra vez."); // 
+		sprintf(buffer, "OpÃ§Ã£o incorreta, tente outra vez."); // 
 		writeString(str);
 	}
 }
@@ -503,8 +503,8 @@ void __attribute__((__interrupt__, __shadow__)) _T1Interrupt(void) {
                 } else {
                     if(sensors[i]) {
                         // Check Digital Inputs
-                        // talvez n�o vai poder ser iterativo, porque o acesso �s portas digitais
-                        // � feito por PORTDbits.RD6 e PORTDbits.RD7 e PORTDbits.RA7
+                        // talvez não vai poder ser iterativo, porque o acesso às portas digitais
+                        // é feito por PORTDbits.RD6 e PORTDbits.RD7 e PORTDbits.RA7
                     }
                 }
             }
@@ -556,7 +556,7 @@ int main(int argc, char** argv) {
         //monitorDigitalInputs(1);
 		
 		/*****************************
-		INÍCIO
+		INÃCIO
 		*****************************/
 		
 		receiveInput(&str, freqSample, nSample, warningValue);
