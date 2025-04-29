@@ -1,3 +1,4 @@
+
 /* 
  * File:   main.c
  * Author: julito
@@ -8,6 +9,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <xc.h>  // Required for MPLAB and PIC register names
+
+#include <string.h>
+#include <ctype.h>
 
 
 #include <p24fj1024gb610.h>
@@ -22,7 +26,7 @@ unsigned char ledState = 0b00000001;
 
 void setupChannels(){
     // Entradas analogicas ANSB(entrada) - TRISB (modo: input))
-    ANSBbits.ANSB0 = 1; TRISBbits.TRISB0 = 1; //entrada analog AN0 - ANSB0 , input
+    ANSBbits.ANSB0 = 1; TRISBbits.TRISB0 = 1; //entrada analog AN0 - ANSB0, input
     ANSBbits.ANSB1 = 1; TRISBbits.TRISB1 = 1; //entrada analog AN1 - ANSB1, input
     ANSBbits.ANSB2 = 1; TRISBbits.TRISB2 = 1; //entrada analog AN2 - ANSB2, input
 
@@ -32,12 +36,12 @@ void setupChannels(){
     TRISDbits.TRISD6 = 1;
     TRISDbits.TRISD7 = 1;
 
-    // Saídas digitais - TRISC (RC1, RC2, RC3)
+    // Saidas digitais - TRISC (RC1, RC2, RC3)
     TRISCbits.TRISC1 = 0;   // Makes RC1 a digital output
     TRISCbits.TRISC2 = 0;
     TRISCbits.TRISC3 = 0;
 
-    // Canal digital configurável TRISA (RA7) ? começa como entrada
+    // Canal digital configuravel TRISA (RA7) ? come a como entrada
     TRISAbits.TRISA7 = 1; 
 }
 
@@ -49,12 +53,18 @@ void setupChannels(){
 12:30:35.693 -> RA7 set as output and set HIGH
 12:30:37.422 -> RA7 set LOW
  */
+
 void testChannels() {
     char buffer[50];
 
     // --- Test Analog Channels ---
     int analog0, analog1, analog2;
-
+    // Select Channel on Multiplexer,
+    //      enable sampling on the ADC, 
+    //      wait for 1000 clock cycles, 
+    //      disable sampling and 
+    //      get value from ADC (store on variable analog#).
+    
     AD1CHS = 0; AD1CON1bits.SAMP = 1; for(int i=0;i<1000;i++); AD1CON1bits.SAMP = 0; while(!AD1CON1bits.DONE); analog0 = ADC1BUF0;
     AD1CHS = 1; AD1CON1bits.SAMP = 1; for(int i=0;i<1000;i++); AD1CON1bits.SAMP = 0; while(!AD1CON1bits.DONE); analog1 = ADC1BUF0;
     AD1CHS = 2; AD1CON1bits.SAMP = 1; for(int i=0;i<1000;i++); AD1CON1bits.SAMP = 0; while(!AD1CON1bits.DONE); analog2 = ADC1BUF0;
@@ -149,12 +159,31 @@ void setupADC() {
     
     AD1CON1bits.ADON = 1;
     //AD1CON1bits.SAMP = 0;
-
 }
 void __attribute__((__interrupt__, __shadow__)) _T2Interrupt(void) {
     /* Interrupt Service Routine code goes here */
     IFS0bits.T1IF = 0; //Reset Timer1 interrupt flag and Return from ISR
     
+}
+
+void setupTimer1(){
+    TMR1 = 0;
+    T1CON = 0x801110;
+    PR1 = (8000000/2) / (8);
+    IPC0bits.T1IP = 0x01;
+    
+    IFS0bits.T1IF = 0; //Clear the Timer1 interrupt status flag
+    IEC0bits.T1IE = 1; //Enable Timer1 interrupts
+    //T1CONbits.TON = 0x01;
+}
+void __attribute__((__interrupt__, __shadow__)) _T1Interrupt(void) {
+    /* Interrupt Service Routine code goes here */
+    IFS0bits.T1IF = 0; //Reset Timer1 interrupt flag and Return from ISR
+    LATA = ledState;
+    
+    ledState <<= 1;
+    if(ledState == 0)
+        ledState = 0b00000001;
 }
 
 void writeChar(char a){
@@ -172,7 +201,7 @@ void writeString(char * str){
 int getPotentiometerValue() {
     AD1CHS = 5;          // AN5 as input
     
-    AD1CON1bits.SAMP = 1;   // Começar o sampling
+    AD1CON1bits.SAMP = 1;   // Come ar o sampling
         
     for (int i = 0; i < 100; i++);  
     AD1CON1bits.SAMP = 0;
@@ -197,48 +226,6 @@ char readChar() {
     return U1RXREG;            // Return received character
 }
 
-void RecieveData(int value, char * str){
-    //char receivedChar = readChar();
-
-    // For demo, echo back the character
-    //sprintf(str, "Recebido: %c\r\n", receivedChar);
-    //writeString(str);
-
-    // Optional: If you want to receive multiple characters (e.g., a command)
-    
-    int i = 0;
-    while (1) {
-        char c = readChar();
-        if (c == '\n' || i >= 49) {
-            str[i] = '\n';
-            str[i+1] = '\0';
-            break;
-        }
-        str[i++] = c;
-    }
-    writeString(str);
-}
-
-void setupTimer1(){
-    TMR1 = 0;
-    T1CON = 0x801110;
-    PR1 = (8000000/2) / (8);
-    IPC0bits.T1IP = 0x01;
-    
-    IFS0bits.T1IF = 0; //Clear the Timer1 interrupt status flag
-    IEC0bits.T1IE = 1; //Enable Timer1 interrupts
-    //T1CONbits.TON = 0x01;
-}
-void __attribute__((__interrupt__, __shadow__)) _T1Interrupt(void) {
-    /* Interrupt Service Routine code goes here */
-    IFS0bits.T1IF = 0; //Reset Timer1 interrupt flag and Return from ISR
-    LATA = ledState;
-    
-    ledState <<= 1;
-    if(ledState == 0)
-        ledState = 0b00000001;
-}
-
 int readTemperatureSensorADC() {
     AD1CHS = 0x1F;  // Internal temperature sensor input
     AD1CON1bits.SAMP = 1;
@@ -260,9 +247,8 @@ void readTemp(){
 
 }
 
-void monitorDigitalInputs() {
+void monitorDigitalInputs(int flag) {
     char buffer[50];
-    int flag = 1;  // Initialize flag (you might want to make this static or global if needed elsewhere)
     
     // Invert logic: 1 when pressed, 0 when released
     int s3 = !PORTDbits.RD6;  // S3 ? RD6
@@ -289,35 +275,213 @@ void monitorDigitalInputs() {
     writeString(buffer);
 }
 
+void receiveInput(char * str, int freqSample, int nSample, int warningValue){
+    //char receivedChar = readChar();
+
+    // For demo, echo back the character
+    //sprintf(str, "Recebido: %c\r\n", receivedChar);
+    //writeString(str);
+
+    // Optional: If you want to receive multiple characters (e.g., a command)
+    
+    int i = 0;
+    while (1) {
+        char c = readChar();
+        if (c == '\n' || i >= 199) {
+            str[i] = '\0';
+            break;
+        }
+        str[i++] = c;
+    }
+    writeString(str); // DEPOIS TIRAR LINHA!!!!!!!!
+    processMessages(str, freqSample, nSample, warningValue);
+}
+
+void processMessages(char * str, int freqSample, int nSample, int warningValue){
+    char auxStr[200];
+    int i = 0, j = 0;
+
+    while (str[i] != '\0') {
+        while (str[i] != '}') {
+            auxStr[i++] = str[j++];
+        }
+        auxStr[j] != '}';
+        auxStr[j+1] != '\0';
+        processInput(auxStr, freqSample, nSample, warningValue);
+        j = 0;
+    }
+}
+
+void processInput(char * str, int freqSample, int nSample, int warningValue){
+	char buffer[50];
+	
+	if (str[0] == '{' && str[1] == '"') { // Só processar input que comece com {"
+		switch (str[2]) { // O terceiro caracter do input recebido é o que interessa para decidir o que se quer fazer.
+			case 'b':
+                // ALTERAR CANAL DIGITAL BIDIRECIONAL (RA7: 0 output, 1 input)
+                changeBidirectionalChannel(str[5]);
+				break;
+
+			case 'v':
+				// LIGAR/DESLIGAR CANAL VIRTUAL (RD6 e RD7)
+                // Isto vale mesmo a pena????
+				break;
+
+			case 'A':
+				// DEFINIR ENTRADAS ANALÓGICAS E DIGITAIS (pode ser mais do que uma a cada vez!)
+                defineSampleInputs(str);
+				break;
+				
+			case 'D':
+				if (str[3] >= 'a' && str[3] <= 'z') { // Se o quarto caracter for uma minúsucula, queremos alterar uma determinada saída digital.
+					
+				}
+				else {
+					// DEFINIR ENTRADAS ANALÓGICAS E DIGITAIS (pode ser mais do que uma a cada vez!)
+                    defineSampleInputs(str);
+				}
+				break;	
+			
+			case 'p':
+				// CONFIGURAR PERÍODO DE AMOSTRAGEM
+                changeValue(freqSample, str[5]);
+				break;
+				
+			case 'n':
+				// CONFIGURAR NÚMERO DE AMOSTRAS POR MENSAGEM
+                changeValue(nSample, str[5]);
+				break;	
+			
+			case 'w':
+                changeValue(warningValue, str[5]);
+				break;	
+						
+			default:
+				sprintf(buffer, "Opção incorreta, tente outra vez."); // 
+				writeString(str);
+				break;
+		}
+	}
+	else {
+		sprintf(buffer, "Opção incorreta, tente outra vez."); // 
+		writeString(str);
+	}
+}
+
+void changeValue (int value, char newValue) {
+    value = (int)(newValue - 48);
+}
+
+void defineSampleInputs(const char *str) {
+    const char *ptr = str;
+    
+    // Skip the opening '{'
+    if (*ptr == '{') {
+        ptr++;
+    } else {
+        printf("Invalid format: missing '{'\n");
+        return;
+    }
+
+    while (*ptr != '}' && *ptr != '\0') {
+        // Skip whitespace
+        while (isspace((unsigned char)*ptr) || *ptr == ',' || *ptr == '"' || *ptr == ':') {
+            // Check for end of string
+            if (*ptr == '\0') {
+                break;
+            }
+            ptr++;
+        }
+
+        // Extract the key (should be 2 characters: type and identifier)
+        char type = *ptr++;
+        char identifier = *ptr++;
+
+        while (isspace((unsigned char)*ptr) || *ptr == ',' || *ptr == '"' || *ptr == ':') {
+            // Check for end of string
+            if (*ptr == '\0') {
+                break;
+            }
+            ptr++;
+        }
+
+        // Get the value (0 or 1)
+        int value = 0;
+        if (*ptr == '0') {
+            value = 0;
+        } else if (*ptr == '1') {
+            value = 1;
+        } else {
+            printf("Invalid value: expected 0 or 1\n");
+            return;
+        }
+        ptr++;
+
+        // Process the input based on type and identifier
+        if (value == 1) {
+            switch (type) {
+                case 'A':
+                    printf("Sampling analog input %c\n", identifier);
+                    // Add your analog sampling code here
+                    break;
+                case 'D':
+                    printf("Sampling digital input %c\n", identifier);
+                    // Add your digital sampling code here
+                    break;
+                default:
+                    printf("Unknown input type: %c\n", type);
+                    break;
+            }
+        }
+    }
+}
+
+void changeBidirectionalChannel (char c_value) {
+    if (c_value == '0') {
+        TRISAbits.TRISA7 = 0;
+    }
+    else if (c_value == '1') {
+        TRISAbits.TRISA7 = 1;
+    }
+}
 
 
 int main(int argc, char** argv) {
-    
-    
+	int value;
+    char str[200];
+
+    int freqSample = 1;
+    int nSample = 5;
+    int warningValue = 5;
+	
     ANSA = 1;
     TRISA = 0;
     LATA = 0b00000000;
-    setupTimer1();
+	
+    setupTimer1(PR1);
     setupUART1();
     setupChannels();
     setupADC();
     
     TRISAbits.TRISA5 = 1;  // Set RA5 as input
-    
-    int value;
-    char str[50];
    
     //setupTimer2();
     
     while(1) {
         //transmitPotentiometerData(value, &str);
-        //RecieveData(value,&str);
+        //recieveString(value,&str);
         //testChannels();
         //for (volatile long i = 0; i < 500000; i++);  // Adjust value as needed
         //readTemp();
-        monitorDigitalInputs();
+        //monitorDigitalInputs(1);
+		
+		/*****************************
+		INÍCIO
+		*****************************/
+		
+		receiveInput(&str, freqSample, nSample, warningValue);
+		
         for (volatile long i = 0; i < 300000; i++);
     }
     return (1);
 }
-
