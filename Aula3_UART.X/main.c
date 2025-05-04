@@ -24,12 +24,12 @@ int main(int argc, char** argv) {
 */  
     setupUART1();
     setupChannels();
-    //setupADC();
+    setupADC();
     
-    TRISAbits.TRISA5 = 1;  // Set RA5 as input
+    //TRISAbits.TRISA5 = 1;  // Set RA5 as input
    
     //setupTimer2();
-    
+    writeString("=============================================================\n       WILKOMMEN AUS GRUN HOREN - DEUTSCHE BURGENWERK   \n  ENNTWICKELT VON  ROMAO, JULIO LOPES E RODRIGO SIMOES\n==============================================================\n"    );
     while(1) {
         //transmitPotentiometerData(value, &str);
         //recieveString(value,&str);
@@ -41,10 +41,14 @@ int main(int argc, char** argv) {
 		/*****************************
 		IN?CIO
 		*****************************/
-		
+         
+		//writeString("woah no main\n");
 		receiveInput(&str);
-		
-        for (volatile long i = 0; i < 300000; i++);
+        //writeString("input verificado no main\n");
+		checkWarningValue();
+        //for (volatile long i = 0; i < 300000; i++);
+        for (volatile long i = 0; i < 10000; i++);
+
     }
     return (1);
 }

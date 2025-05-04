@@ -25,7 +25,7 @@ extern int adc_channels[];
 void setupChannels();
 void setupUART1();
 void setupADC();
-void setupTimer1(int period);
+void setupTimer1();
 void setupTimer2();
 
 // UART I/O
