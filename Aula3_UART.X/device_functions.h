@@ -26,7 +26,6 @@ void setupChannels();
 void setupUART1();
 void setupADC();
 void setupTimer1();
-void setupTimer2();
 
 // UART I/O
 void writeChar(char a);
@@ -34,12 +33,7 @@ void writeString(char *str);
 char readChar();
 
 // ADC and temperature
-int getPotentiometerValue();
-void transmitPotentiometerData(int value, char *str);
-int readTemperatureSensorADC();
-int readSensorADC(int c);
 float readCalibratedTemp(int adcValue);
-void readTemp();
 
 // Digital monitoring
 void monitorDigitalInputs(int flag);
@@ -55,7 +49,7 @@ void defineSampleInputs(const char *str);
 
 // Settings
 void changeValue(int value, char newValue);
-void changeBidirectionalChannel(char c_value);
+void changeBidirectionalChannel();
 void sampleInputs();
 void checkWarningValue();
 void sendResultStringJSON();

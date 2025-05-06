@@ -20,29 +20,28 @@ int adc_channels[] = {4, 5, 1};
 //  1 - LDR
 
 void setupChannels() {
-    ANSBbits.ANSB0 = 1;
-    TRISBbits.TRISB0 = 1;
-    ANSBbits.ANSB1 = 1;
-    TRISBbits.TRISB1 = 1;
-    ANSBbits.ANSB2 = 1;
-    TRISBbits.TRISB2 = 1;
+    ANSBbits.ANSB0 = 1; TRISBbits.TRISB0 = 1;
+    ANSBbits.ANSB1 = 1; TRISBbits.TRISB1 = 1;
+    ANSBbits.ANSB2 = 1; TRISBbits.TRISB2 = 1;
 
-    ANSDbits.ANSD6 = 0;
-    TRISDbits.TRISD6 = 1;
-    ANSDbits.ANSD7 = 0;
-    TRISDbits.TRISD7 = 1;
+    ANSDbits.ANSD6 = 0; TRISDbits.TRISD6 = 1;
+    ANSDbits.ANSD7 = 0; TRISDbits.TRISD7 = 1;
 
     TRISAbits.TRISA4 = 0;
     TRISAbits.TRISA5 = 0;
     TRISAbits.TRISA6 = 0;
 
+    ANSAbits.ANSA7 = 0; TRISAbits.TRISA7 = 1;
+    
+    LATAbits.LATA7 = 0;
     LATAbits.LATA6 = 0;
     LATAbits.LATA5 = 0;
     LATAbits.LATA4 = 0;
-
-    TRISAbits.TRISA7 = bidirectional;
+    
+    
+    
 }
-
+/*
 void testChannels() {
     char buffer[50];
     int analog0, analog1, analog2;
@@ -91,6 +90,7 @@ void testChannels() {
     writeString("RA7 set LOW\r\n");
     TRISAbits.TRISA7 = 1;
 }
+*/
 
 void setupUART1() {
     __builtin_write_OSCCONL(OSCCON & 0xbf);
@@ -127,16 +127,6 @@ void setupTimer1() {
 void __attribute__((__interrupt__, __shadow__)) _T1Interrupt(void) {
     IFS0bits.T1IF = 0; //Reset Timer1 interrupt flag and Return from ISR
     char buff[100];
-    //sprintf(buff,"Timer triggered, Tindex = %d, Sindex = %d, period: %d, nSamples: %d\n", timerIndex, sampleIndex, period, nSamples);
-    //writeString(buff);
-
-    //printf("DEBUG: sensors={");
-    //for(int i = 0; i < num_sensors; i++) {
-    //    printf("%d",sensors[i]);
-    //    printf(",");
-    //}
-    //printf("}\n");
-
 
     if (timerIndex < period)
         timerIndex++;
@@ -144,14 +134,9 @@ void __attribute__((__interrupt__, __shadow__)) _T1Interrupt(void) {
 
         timerIndex = 0;
         if (sampleIndex < nSamples) {
-            //writeString("Started sampling!\n");
             for (int i = 0; i < num_sensors; i++) {
-                //printf("i = %d, sensorvalue = %d\n", i, sensors[i]);
                 if (i < 3) {
-                    //printf("Passou a comparacao < 3\n");
                     if (sensors[i] == 1) {
-                        //writeString(("Started checking analog sensor\n"));
-
                         AD1CHS = adc_channels[i];
 
                         AD1CON1bits.SAMP = 1;
@@ -167,7 +152,11 @@ void __attribute__((__interrupt__, __shadow__)) _T1Interrupt(void) {
                             break;
                         case 4: sensorData[i][sampleIndex] = !PORTDbits.RD7;
                             break;
-                        case 5: sensorData[i][sampleIndex] = !PORTAbits.RA7;
+                        case 5:
+                            if(bidirectional)
+                                sensorData[i][sampleIndex] = !PORTAbits.RA7;
+                            else 
+                                sensorData[i][sampleIndex] = -1;
                             break;
                         case 6: if (virtualChannel)
                                 sensorData[i][sampleIndex] = ((!PORTDbits.RD6 << 1) | !PORTDbits.RD7);
@@ -234,26 +223,6 @@ void sendResultStringJSON() {
     writeString(ResultString);
 }
 
-//void sendResultStringJSON(){
-//    // Fazer string de resultados e enviar para a consola Serial
-//    // Preparar string de envio do JSON tipo {?Ax?:[512,514,516,516,510], ?DB?: [0,0,1,1,1], ?DV?: [0,1,2,3,3]} 
-//    char ResultString[250];
-//    const char * Sensor_names[] = {"'Ax': ", "'Ay': ", "'Az': ", "'D6': ", "'D7': ", "'DB': ", "DV: "};
-//    char * te
-//    sprintf(ResultString,"{");
-//    
-//    for(int i = 0; i < num_sensors; i++) {
-//        if(sensors[i]){
-//            strcat(ResultString, Sensor_names[i]);
-//            strcat(ResultString, sensorData[i]);
-//        }
-//    }
-//    
-//    strcat(ResultString,"}");
-//    
-//    writeString(ResultString);
-//}
-
 void writeChar(char a) {
     while (U1STAbits.UTXBF);
     U1TXREG = a;
@@ -318,7 +287,6 @@ void turnOnLED(const char * str) {
     }  
 }
 
-
 void writeString(char *str) {
     while (*str) {
         writeChar(*str);
@@ -331,79 +299,25 @@ char readChar() {
     return U1RXREG;
 }
 
-int getPotentiometerValue() {
-    AD1CHS = 5;
-    AD1CON1bits.SAMP = 1;
-    for (int i = 0; i < 100; i++);
-    AD1CON1bits.SAMP = 0;
-    while (!AD1CON1bits.DONE);
-    return ADC1BUF0;
-}
-
-void transmitPotentiometerData(int value, char *str) {
-    value = getPotentiometerValue();
-    sprintf(str, "Valor do potentiometro = %d\r\n", value);
-    writeString(str);
-}
-
-int readTemperatureSensorADC() {
-    AD1CHS = 0x1F;
-    AD1CON1bits.SAMP = 1;
-    for (volatile int i = 0; i < 1000; i++);
-    AD1CON1bits.SAMP = 0;
-    while (!AD1CON1bits.DONE);
-    return ADC1BUF0;
-}
-
-int readSensorADC(int c) {
-    AD1CHS = c;
-    AD1CON1bits.SAMP = 1;
-    for (volatile int i = 0; i < 1000; i++);
-    AD1CON1bits.SAMP = 0;
-    while (!AD1CON1bits.DONE);
-    return ADC1BUF0;
-}
-
 float readCalibratedTemp(int adcValue) {
     return 0.1 * adcValue - 64.3;
 }
 
-void readTemp() {
-    int adc = readTemperatureSensorADC();
-    float temp = readCalibratedTemp(adc);
-    char buffer[50];
-    sprintf(buffer, "Temp = %.2f C\r\n", temp);
-    writeString(buffer);
-}
-
-void monitorDigitalInputs(int flag) {
-    bidirectional = flag;
-    /*
-    char buffer[50];
-    int s3 = !PORTDbits.RD6;
-    int s6 = !PORTDbits.RD7;
-    /*
-    if (!flag) {
-        sprintf(buffer, "S3 = %d, S6 = %d\r\n", s3, s6);
-    } else {
-        int buttonState = (s3 << 1) | s6;
-        sprintf(buffer, "State = %d\r\n", buttonState);
+void changeBidirectionalChannel() {
+    if(!bidirectional){
+        TRISAbits.TRISA7 = 0;
+        LATAbits.LATA7 = 1;
+    }else{
+        LATAbits.LATA7 = 0;
+        TRISAbits.TRISA7 = 1;
     }
-     */
 
-    //writeString(buffer);
-}
-
-void changeBidirectionalChannel(char c_value) {
-    TRISAbits.TRISA7 = (c_value == '1') ? 1 : 0;
     char message[50];
-    sprintf(message, "Canal directional esta %c\r\n", c_value);
-    //strcat(message,( "Canal directional esta %s\r\n", c_value ? : "ativo", "desativo"));
+    sprintf(message, "Canal bidirectional esta %d\r\n", bidirectional);
     writeString(message);
-}
+    sprintf(message, "TRISA7=%d, RA7=%d, LATA7=%d\r\n", TRISAbits.TRISA7, PORTAbits.RA7, LATAbits.LATA7);
+    writeString(message);
 
-void changeValue(int value, char newValue) {
-    value = (int) (newValue - '0');
 }
 
 void receiveInput(char * str) {
@@ -460,7 +374,8 @@ void processInput(char * str) {
             case 'b':
                 // ALTERAR CANAL DIGITAL BIDIRECIONAL (RA7: 0 output, 1 input)
                 writeString("Chegou no change direction\n");
-                changeBidirectionalChannel(str[5]);
+                bidirectional = (int)(str[5] - '0');
+                changeBidirectionalChannel();
                 break;
 
             case 'v':
