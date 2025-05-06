@@ -11,26 +11,34 @@ int warningValue = 0;
 volatile int nSamples = 0;
 volatile int period = 0;
 volatile int timerIndex = 0;
-volatile int sensors[num_sensors] = {0,0,0,0,0,0,0};
+volatile int sensors[num_sensors] = {0, 0, 0, 0, 0, 0, 0};
 volatile int sensorData[num_sensors][max_samples];
 volatile int sampleIndex = 0;
 int adc_channels[] = {4, 5, 1};
 //  4 - Temperature Sensor
 //  5 - Potentiometer
 //  1 - LDR
+
 void setupChannels() {
-    ANSBbits.ANSB0 = 1; TRISBbits.TRISB0 = 1;
-    ANSBbits.ANSB1 = 1; TRISBbits.TRISB1 = 1;
-    ANSBbits.ANSB2 = 1; TRISBbits.TRISB2 = 1;
+    ANSBbits.ANSB0 = 1;
+    TRISBbits.TRISB0 = 1;
+    ANSBbits.ANSB1 = 1;
+    TRISBbits.TRISB1 = 1;
+    ANSBbits.ANSB2 = 1;
+    TRISBbits.TRISB2 = 1;
 
     ANSDbits.ANSD6 = 0;
-    ANSDbits.ANSD7 = 0;
     TRISDbits.TRISD6 = 1;
+    ANSDbits.ANSD7 = 0;
     TRISDbits.TRISD7 = 1;
 
-    TRISCbits.TRISC1 = 0;
-    TRISCbits.TRISC2 = 0;
-    TRISCbits.TRISC3 = 0;
+    TRISAbits.TRISA4 = 0;
+    TRISAbits.TRISA5 = 0;
+    TRISAbits.TRISA6 = 0;
+
+    LATAbits.LATA6 = 0;
+    LATAbits.LATA5 = 0;
+    LATAbits.LATA4 = 0;
 
     TRISAbits.TRISA7 = bidirectional;
 }
@@ -39,9 +47,24 @@ void testChannels() {
     char buffer[50];
     int analog0, analog1, analog2;
 
-    AD1CHS = 0; AD1CON1bits.SAMP = 1; for(int i = 0; i < 1000; i++); AD1CON1bits.SAMP = 0; while(!AD1CON1bits.DONE); analog0 = ADC1BUF0;
-    AD1CHS = 1; AD1CON1bits.SAMP = 1; for(int i = 0; i < 1000; i++); AD1CON1bits.SAMP = 0; while(!AD1CON1bits.DONE); analog1 = ADC1BUF0;
-    AD1CHS = 2; AD1CON1bits.SAMP = 1; for(int i = 0; i < 1000; i++); AD1CON1bits.SAMP = 0; while(!AD1CON1bits.DONE); analog2 = ADC1BUF0;
+    AD1CHS = 0;
+    AD1CON1bits.SAMP = 1;
+    for (int i = 0; i < 1000; i++);
+    AD1CON1bits.SAMP = 0;
+    while (!AD1CON1bits.DONE);
+    analog0 = ADC1BUF0;
+    AD1CHS = 1;
+    AD1CON1bits.SAMP = 1;
+    for (int i = 0; i < 1000; i++);
+    AD1CON1bits.SAMP = 0;
+    while (!AD1CON1bits.DONE);
+    analog1 = ADC1BUF0;
+    AD1CHS = 2;
+    AD1CON1bits.SAMP = 1;
+    for (int i = 0; i < 1000; i++);
+    AD1CON1bits.SAMP = 0;
+    while (!AD1CON1bits.DONE);
+    analog2 = ADC1BUF0;
 
     sprintf(buffer, "AN0=%d, AN1=%d, AN2=%d\r\n", analog0, analog1, analog2);
     writeString(buffer);
@@ -90,12 +113,12 @@ void setupADC() {
     AD1CON1bits.ADON = 1;
 }
 
-void setupTimer1(){
+void setupTimer1() {
     TMR1 = 0;
     T1CON = 0x801110;
-    PR1 = (8000000/2) / (256);
+    PR1 = (8000000 / 2) / (256);
     IPC0bits.T1IP = 0x01;
-    
+
     IFS0bits.T1IF = 0; //Clear the Timer1 interrupt status flag
     IEC0bits.T1IE = 1; //Enable Timer1 interrupts
     T1CONbits.TON = 0x01;
@@ -106,19 +129,19 @@ void __attribute__((__interrupt__, __shadow__)) _T1Interrupt(void) {
     char buff[100];
     //sprintf(buff,"Timer triggered, Tindex = %d, Sindex = %d, period: %d, nSamples: %d\n", timerIndex, sampleIndex, period, nSamples);
     //writeString(buff);
-    
+
     //printf("DEBUG: sensors={");
     //for(int i = 0; i < num_sensors; i++) {
     //    printf("%d",sensors[i]);
     //    printf(",");
     //}
     //printf("}\n");
-    
-    
+
+
     if (timerIndex < period)
         timerIndex++;
     else {
-        
+
         timerIndex = 0;
         if (sampleIndex < nSamples) {
             //writeString("Started sampling!\n");
@@ -128,28 +151,28 @@ void __attribute__((__interrupt__, __shadow__)) _T1Interrupt(void) {
                     //printf("Passou a comparacao < 3\n");
                     if (sensors[i] == 1) {
                         //writeString(("Started checking analog sensor\n"));
-                        
+
                         AD1CHS = adc_channels[i];
 
                         AD1CON1bits.SAMP = 1;
                         for (volatile int i = 0; i < 1000; i++); // Short delay
                         AD1CON1bits.SAMP = 0;
 
-                        while (!AD1CON1bits.DONE); 
+                        while (!AD1CON1bits.DONE);
                         sensorData[i][sampleIndex] = ADC1BUF0;
                     }
                 } else {
-                    switch(i) {
+                    switch (i) {
                         case 3: sensorData[i][sampleIndex] = !PORTDbits.RD6;
                             break;
                         case 4: sensorData[i][sampleIndex] = !PORTDbits.RD7;
                             break;
                         case 5: sensorData[i][sampleIndex] = !PORTAbits.RA7;
                             break;
-                        case 6: if(virtualChannel)
-                                    sensorData[i][sampleIndex] = ((!PORTDbits.RD6 << 1) | !PORTDbits.RD7);
-                                else
-                                    sensorData[i][sampleIndex] = 0;
+                        case 6: if (virtualChannel)
+                                sensorData[i][sampleIndex] = ((!PORTDbits.RD6 << 1) | !PORTDbits.RD7);
+                            else
+                                sensorData[i][sampleIndex] = 0;
                             break;
                     }
                 }
@@ -179,10 +202,10 @@ void sendResultStringJSON() {
                 strcat(ResultString, ", ");
             }
             first = 0;
-            
+
             strcat(ResultString, Sensor_names[i]);
             strcat(ResultString, "[");
-            
+
             for (int j = 0; j < nSamples; j++) {
                 sprintf(temp, "%d", sensorData[i][j]);
                 strcat(ResultString, temp);
@@ -193,9 +216,9 @@ void sendResultStringJSON() {
             strcat(ResultString, "]");
         }
     }
-    if(virtualChannel) {   
+    if (virtualChannel) {
         strcat(ResultString, ", 'DV': [");
-        for(int j = 0; j < nSamples; j++) {
+        for (int j = 0; j < nSamples; j++) {
             //printf("Sensor 4 data: %d, Sensor 5 data: %d, Sensor Virtual data: %d\n",sensorData[4][j],sensorData[5][j],(sensorData[4][j] << 1 | sensorData[5][j]));
             sprintf(temp, "%d", (sensorData[3][j] << 1 | sensorData[4][j]));
             strcat(ResultString, temp);
@@ -205,7 +228,7 @@ void sendResultStringJSON() {
         }
         strcat(ResultString, "]");
     }
-    
+
     strcat(ResultString, "}");
     strcat(ResultString, "\r\n");
     writeString(ResultString);
@@ -232,9 +255,69 @@ void sendResultStringJSON() {
 //}
 
 void writeChar(char a) {
-    while(U1STAbits.UTXBF);
+    while (U1STAbits.UTXBF);
     U1TXREG = a;
 }
+
+void turnOnLED(const char * str) {
+    const char *ptr = str;
+
+    // Skip the opening '{'
+    if (*ptr == '{') {
+        ptr++;
+    } else {
+        printf("Invalid format: missing '{'\n");
+        return;
+    }
+
+    while (*ptr != '}' && *ptr != '\0') {
+        // Skip whitespace
+        while (isspace((unsigned char) *ptr) || *ptr == ',' || *ptr == '"' || *ptr == ':') {
+            // Check for end of string
+            if (*ptr == '\0') {
+                break;
+            }
+            ptr++;
+        }
+
+        // Extract the key (should be 2 characters: type and identifier)
+        char type = *ptr++;
+        char identifier = *ptr++;
+
+        while (isspace((unsigned char) *ptr) || *ptr == ',' || *ptr == '"' || *ptr == ':') {
+            // Check for end of string
+            if (*ptr == '\0') {
+                break;
+            }
+            ptr++;
+        }
+
+        // Get the value (0 or 1)
+        int value = 0;
+        if (*ptr == '0') {
+            value = 0;
+        } else if (*ptr == '1') {
+            value = 1;
+        } else {
+            printf("Invalid value: expected 0 or 1\n");
+            return;
+        }
+        ptr++;
+
+        printf("\tD%c = %d\n", identifier, value);
+        switch (identifier) {
+            case('x'): LATAbits.LATA6 = value;
+                break;
+            case('y'): LATAbits.LATA5 = value;
+                break;
+            case('z'): LATAbits.LATA4 = value;
+                break;
+        }
+        break;
+        printf("LED %c alterado para %d.\n", identifier, value);
+    }  
+}
+
 
 void writeString(char *str) {
     while (*str) {
@@ -253,7 +336,7 @@ int getPotentiometerValue() {
     AD1CON1bits.SAMP = 1;
     for (int i = 0; i < 100; i++);
     AD1CON1bits.SAMP = 0;
-    while(!AD1CON1bits.DONE);
+    while (!AD1CON1bits.DONE);
     return ADC1BUF0;
 }
 
@@ -306,24 +389,24 @@ void monitorDigitalInputs(int flag) {
         int buttonState = (s3 << 1) | s6;
         sprintf(buffer, "State = %d\r\n", buttonState);
     }
-    */
-    
+     */
+
     //writeString(buffer);
 }
 
 void changeBidirectionalChannel(char c_value) {
     TRISAbits.TRISA7 = (c_value == '1') ? 1 : 0;
     char message[50];
-    sprintf(message, "Canal directional esta %c\r\n",c_value);
+    sprintf(message, "Canal directional esta %c\r\n", c_value);
     //strcat(message,( "Canal directional esta %s\r\n", c_value ? : "ativo", "desativo"));
     writeString(message);
 }
 
 void changeValue(int value, char newValue) {
-    value = (int)(newValue - '0');
+    value = (int) (newValue - '0');
 }
 
-void receiveInput(char * str){
+void receiveInput(char * str) {
     //char receivedChar = readChar();
 
     // For demo, echo back the character
@@ -331,9 +414,9 @@ void receiveInput(char * str){
     //writeString(str);
 
     // Optional: If you want to receive multiple characters (e.g., a command)
-    
+
     int i = 0;
-    
+
     char c;
     while (1) {
         c = readChar();
@@ -343,17 +426,17 @@ void receiveInput(char * str){
         }
         str[i++] = c;
     }
-    
+
     //while (U1STAbits.URXDA) {
     //    volatile char dump = U1RXREG;
     //}
-    
+
     //writeString(str); // DEPOIS TIRAR LINHA!!!!!!!!
     //writeString("\n");
     processMessages(str);
 }
 
-void processMessages(char * str){
+void processMessages(char * str) {
     char auxStr[200];
     int i = 0, j = 0;
 
@@ -362,87 +445,85 @@ void processMessages(char * str){
             auxStr[i++] = str[j++];
         }
         auxStr[j] != '}';
-        auxStr[j+1] != '\0';
+        auxStr[j + 1] != '\0';
         processInput(auxStr);
-        i++;                // TESTE
+        i++; // TESTE
         j = 0;
     }
 }
 
-void processInput(char * str){
-	char buffer[70];
+void processInput(char * str) {
+    char buffer[70];
     int flag;
-	if (str[0] == '{' && str[1] == '"') { // Só processar input que comece com {"
-		switch (str[2]) { // O terceiro caracter do input recebido é o que interessa para decidir o que se quer fazer.
-			case 'b':
+    if (str[0] == '{' && str[1] == '"') { // Só processar input que comece com {"
+        switch (str[2]) { // O terceiro caracter do input recebido é o que interessa para decidir o que se quer fazer.
+            case 'b':
                 // ALTERAR CANAL DIGITAL BIDIRECIONAL (RA7: 0 output, 1 input)
                 writeString("Chegou no change direction\n");
                 changeBidirectionalChannel(str[5]);
-				break;
+                break;
 
-			case 'v':
-				// LIGAR/DESLIGAR CANAL VIRTUAL (RD6 e RD7)
+            case 'v':
+                // LIGAR/DESLIGAR CANAL VIRTUAL (RD6 e RD7)
                 // Isto vale mesmo a pena????
                 // sim
                 // eles pedem
-                virtualChannel = (int)(str[5] - '0');
+                virtualChannel = (int) (str[5] - '0');
                 sprintf(buffer, "Canal virtual de comunicacion cambiado para %d\n", virtualChannel);
                 writeString(buffer);
-				break;
+                break;
 
-			case 'A':
+            case 'A':
                 printf("Current sensor map:\n");
-				// DEFINIR ENTRADAS ANALÓGICAS E DIGITAIS (pode ser mais do que uma a cada vez!)
+                // DEFINIR ENTRADAS ANALÓGICAS E DIGITAIS (pode ser mais do que uma a cada vez!)
                 defineSampleInputs(str);
-				break;
-				
-			case 'D':
-				if (str[3] >= 'a' && str[3] <= 'z') { // Se o quarto caracter for uma minúsucula, queremos alterar uma determinada saída digital.
-					
-				}
-				else {
-					// DEFINIR ENTRADAS ANALÓGICAS E DIGITAIS (pode ser mais do que uma a cada vez!)
+                break;
+
+            case 'D':
+                if (str[3] >= 'a' && str[3] <= 'z') { // Se o quarto caracter for uma minúsucula, queremos alterar uma determinada saída digital.
+                    turnOnLED(str);
+                } else {
+                    // DEFINIR ENTRADAS ANALÓGICAS E DIGITAIS (pode ser mais do que uma a cada vez!)
                     defineSampleInputs(str);
-				}
-				break;	
-			
-			case 'p':
-				// CONFIGURAR PERÍODO DE AMOSTRAGEM
-                period = (int)(str[5] - '0');
+                }
+                break;
+
+            case 'p':
+                // CONFIGURAR PERÍODO DE AMOSTRAGEM
+                period = (int) (str[5] - '0');
                 sprintf(buffer, "Periodo cambiado para %d\n", period);
                 writeString(buffer);
                 break;
-				
-			case 'n':
-				// CONFIGURAR NÚMERO DE AMOSTRAS POR MENSAGEM
-                nSamples = (int)(str[5] - '0');
+
+            case 'n':
+                // CONFIGURAR NÚMERO DE AMOSTRAS POR MENSAGEM
+                nSamples = (int) (str[5] - '0');
                 sprintf(buffer, "Numero de amuestras cambiado para %d\n", nSamples);
                 writeString(buffer);
-                break;	
-			case 'w':
-                warningValue = (int)(str[5] - '0');
+                break;
+            case 'w':
+                warningValue = (int) (str[5] - '0');
                 sprintf(buffer, "Codigo de aviso cambiado para %d\n", warningValue);
                 writeString(buffer);
-                break;	
+                break;
             case 's':
                 sampleInputs();
                 break;
-			default:
-				sprintf(buffer, "Opção incorreta, tente outra vez."); // 
-				writeString(str);
-				break;
-		}
-	}
-	else {
-		sprintf(buffer, "Opção incorreta, tente outra vez."); // 
-		writeString(str);
-	}
+            default:
+                sprintf(buffer, "Opção incorreta, tente outra vez."); // 
+                writeString(str);
+                break;
+        }
+    } else {
+        sprintf(buffer, "Opção incorreta, tente outra vez."); // 
+        writeString(str);
+    }
     //memset(str, 0, sizeof(str)); 
 }
 
 void defineSampleInputs(const char *str) {
     const char *ptr = str;
-    
+
     // Skip the opening '{'
     if (*ptr == '{') {
         ptr++;
@@ -453,7 +534,7 @@ void defineSampleInputs(const char *str) {
 
     while (*ptr != '}' && *ptr != '\0') {
         // Skip whitespace
-        while (isspace((unsigned char)*ptr) || *ptr == ',' || *ptr == '"' || *ptr == ':') {
+        while (isspace((unsigned char) *ptr) || *ptr == ',' || *ptr == '"' || *ptr == ':') {
             // Check for end of string
             if (*ptr == '\0') {
                 break;
@@ -465,7 +546,7 @@ void defineSampleInputs(const char *str) {
         char type = *ptr++;
         char identifier = *ptr++;
 
-        while (isspace((unsigned char)*ptr) || *ptr == ',' || *ptr == '"' || *ptr == ':') {
+        while (isspace((unsigned char) *ptr) || *ptr == ',' || *ptr == '"' || *ptr == ':') {
             // Check for end of string
             if (*ptr == '\0') {
                 break;
@@ -487,37 +568,46 @@ void defineSampleInputs(const char *str) {
 
         // Process the input based on type and identifier
         //if (value == 1) {
-        
-            switch (type) {
-                case 'A':
-                    printf("\tA%c = %d\n", identifier, value);
-                    switch(identifier){
-                        case('x'):  sensors[0] = value; break;
-                        case('y'):  sensors[1] = value; break;
-                        case('z'):  sensors[2] = value; break;                        
-                    }
-                    break;
-                case 'D':
-                    printf("\tD%c = %d\n", identifier, value);
-                    switch(identifier){
-                        case('6'):  sensors[3] = value; break;
-                        case('7'):  sensors[4] = value; break;
-                        case('B'):  sensors[5] = value; break;                        
-                        case('V'):  sensors[6] = value; break;                        
-                    }
-                    break;
-                default:
-                    printf("Unknown input type: %c\n", type);
-                    break;
-            }
+
+        switch (type) {
+            case 'A':
+                printf("\tA%c = %d\n", identifier, value);
+                switch (identifier) {
+                    case('x'): sensors[0] = value;
+                        break;
+                    case('y'): sensors[1] = value;
+                        break;
+                    case('z'): sensors[2] = value;
+                        break;
+                }
+                break;
+            case 'D':
+                printf("\tD%c = %d\n", identifier, value);
+                switch (identifier) {
+                    case('6'): sensors[3] = value;
+                        break;
+                    case('7'): sensors[4] = value;
+                        break;
+                    case('B'): sensors[5] = value;
+                        break;
+                    case('V'): sensors[6] = value;
+                        break;
+                }
+                break;
+            default:
+                printf("Unknown input type: %c\n", type);
+                break;
+        }
         //}
     }
 }
-void checkWarningValue(){
+
+void checkWarningValue() {
     if (virtualChannel)
-        if(warningValue == ((!PORTDbits.RD6 << 1) | !PORTDbits.RD7))
+        if (warningValue == ((!PORTDbits.RD6 << 1) | !PORTDbits.RD7))
             writeString("Warning value is the same as bidirectional channel\n");
 }
+
 void sampleInputs() {
     setupTimer1();
 }
