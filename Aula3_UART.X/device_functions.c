@@ -31,7 +31,7 @@ void setupChannels() {
     TRISAbits.TRISA5 = 0;
     TRISAbits.TRISA6 = 0;
 
-    ANSAbits.ANSA7 = 0; TRISAbits.TRISA7 = 1;
+    ANSAbits.ANSA7 = 0; TRISAbits.TRISA7 = bidirectional;
     
     LATAbits.LATA7 = 0;
     LATAbits.LATA6 = 0;
@@ -369,8 +369,8 @@ void processMessages(char * str) {
 void processInput(char * str) {
     char buffer[70];
     int flag;
-    if (str[0] == '{' && str[1] == '"') { // Só processar input que comece com {"
-        switch (str[2]) { // O terceiro caracter do input recebido é o que interessa para decidir o que se quer fazer.
+    if (str[0] == '{' && str[1] == '"') { // SÃ³ processar input que comece com {"
+        switch (str[2]) { // O terceiro caracter do input recebido Ã© o que interessa para decidir o que se quer fazer.
             case 'b':
                 // ALTERAR CANAL DIGITAL BIDIRECIONAL (RA7: 0 output, 1 input)
                 writeString("Chegou no change direction\n");
@@ -390,28 +390,28 @@ void processInput(char * str) {
 
             case 'A':
                 printf("Current sensor map:\n");
-                // DEFINIR ENTRADAS ANALÓGICAS E DIGITAIS (pode ser mais do que uma a cada vez!)
+                // DEFINIR ENTRADAS ANALÃ“GICAS E DIGITAIS (pode ser mais do que uma a cada vez!)
                 defineSampleInputs(str);
                 break;
 
             case 'D':
-                if (str[3] >= 'a' && str[3] <= 'z') { // Se o quarto caracter for uma minúsucula, queremos alterar uma determinada saída digital.
+                if (str[3] >= 'a' && str[3] <= 'z') { // Se o quarto caracter for uma minÃºsucula, queremos alterar uma determinada saÃ­da digital.
                     turnOnLED(str);
                 } else {
-                    // DEFINIR ENTRADAS ANALÓGICAS E DIGITAIS (pode ser mais do que uma a cada vez!)
+                    // DEFINIR ENTRADAS ANALÃ“GICAS E DIGITAIS (pode ser mais do que uma a cada vez!)
                     defineSampleInputs(str);
                 }
                 break;
 
             case 'p':
-                // CONFIGURAR PERÍODO DE AMOSTRAGEM
+                // CONFIGURAR PERÃODO DE AMOSTRAGEM
                 period = (int) (str[5] - '0');
                 sprintf(buffer, "Periodo cambiado para %d\n", period);
                 writeString(buffer);
                 break;
 
             case 'n':
-                // CONFIGURAR NÚMERO DE AMOSTRAS POR MENSAGEM
+                // CONFIGURAR NÃšMERO DE AMOSTRAS POR MENSAGEM
                 nSamples = (int) (str[5] - '0');
                 sprintf(buffer, "Numero de amuestras cambiado para %d\n", nSamples);
                 writeString(buffer);
@@ -425,12 +425,12 @@ void processInput(char * str) {
                 sampleInputs();
                 break;
             default:
-                sprintf(buffer, "Opção incorreta, tente outra vez."); // 
+                sprintf(buffer, "OpÃ§Ã£o incorreta, tente outra vez."); // 
                 writeString(str);
                 break;
         }
     } else {
-        sprintf(buffer, "Opção incorreta, tente outra vez."); // 
+        sprintf(buffer, "OpÃ§Ã£o incorreta, tente outra vez."); // 
         writeString(str);
     }
     //memset(str, 0, sizeof(str)); 
