@@ -1,26 +1,19 @@
-
-/* 
- * File:   main.c
- * Author: julito
- *
- * Created on April 15, 2025, 11:31 AM
-*/
-
 #include "device_functions.h"
 
-int main(int argc, char** argv) { 
-    int values[5];
+int main(int argc, char** argv) {
+    char buf[128];
     
+    setupUART1();
     I2C2_Init();
-    printf("Started on printf!\n");
-    writeString("\nStarted!\n");
+    setupTimer1();
     
-    while(1) {
-        I2C2_SendToArduino(0xAC);
-        I2C2_ReadFromArduino(values, 5);
-        writeString(values);
-        for (volatile long i = 0; i < 300000; i++);
+    writeString("PIC Started...\r\n");
+
+    while (1) {
+        receiveInput(&buf);
         
+        for(volatile long i = 0; i <10000; i++);
     }
-    return (1);
+
+    return 0;
 }
